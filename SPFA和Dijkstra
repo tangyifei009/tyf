@@ -1,0 +1,38 @@
+【最短路算法】Dijkstra+heap和SPFA的区别		 单源最短路问题(SSSP)常用的算法有Dijkstra，Bellman-Ford，这两个算法进行优化，就有了Dijkstra+heap、SPFA(Shortest Path Faster Algorithm)算法。这两个算法写起来非常相似。下面就从他们的算法思路、写法和适用场景上进行对比分析。如果对最短路算法不太了解，可先看一下相关ppt:最短路为了解释得简单点，以及让对比更加明显，我就省略了部分细节。我们先看优化前的：   O(V2+E)
+
+的Dijkstran-1次循环-->找到未标记的d最小的点-->标记，松弛它的边 O(VE)
+
+的Bellman-Fordn-1次循环-->对所有边松弛还能再松弛则有负环Dijkstra是每次确定了到一个点的最短距离，再用该点更新到其它点的距离。不能处理有负边的图。Bellman-Ford是每次对所有边松弛。可以计算出有负边无负环的最短路，可以判断是否存在负环。接下来再看优化后的： O((V+E)lgV)
+
+的Dijkstra+heap优化用STL中的优先队列实现堆：while(优先队列非空)-->队头出队，松弛它的边-->松弛了的<新距离,点>入队删了部分定义和初始化的代码：typedef pair<int,int> PII;
+priority_queue<PII,vector<PII>,greater<PII> > q;
+...
+while(!q.empty()){  // O(V) 加上count<n可以优化一点点 
+    int w=q.top().first, u=q.top().second;
+    q.pop();   // O(lgV)
+    if(b[u])continue; b[u]=true;
+    //++count;
+    for(int i=head[u];i;i=e[i].next){ // Sum -> O(E)
+        int v=e[i].to;
+        if(d[u]+e[i].w<d[v]){
+            d[v]=d[u]+e[i].w;
+            q.push(PII(d[v],v));  // O(lgV)
+        }
+    }
+} O(kE)
+
+的SPFAwhile(队非空)-->队头出队，松弛它的边-->松弛了且不在队内的点入队while(!q.empty()){
+    int u=q.front(); q.pop();
+    b[u]=false;
+    for(int i=head[u];i;i=e[i].next){
+        int v=e[i].to;
+        if(d[u]+e[i].w<d[v]){
+            d[v]=d[u]+e[i].w;
+            if(!b[v])b[v]=true,q.push(v);
+        }
+    }
+}算法思路对比Dijkstra+heap是用小根堆，每次取出d最小的点，来更新距离，那么这个点来说，最小距离就是当前的d。SPFA是用双端队列，每次取出队头，来更新距离，它之后可能还会入队。它是一种动态逼近法，因为每次松弛距离都会减小，所以松弛一定会有结束的。如果一个点入队超过n次就是存在负环。复杂度分析对比Dijkstra+heap因为是堆，取队头需要O(lgV)。松弛边时，因为点的d改变了，所以点v需要以新距离重新入堆，O(lgV)，总共O(ElgV)。因此总的是 O((V+E)lgV)
+
+ SPFA论文证明也不严格。复杂度不太好分析。总的是O(kE)。k大概为2。适用场景如果是稠密图，Dijkstra+heap比SPFA快。稀疏图则SPFA更快。SPFA可以有SLF和LLL两种优化，SLF就是d比队头小就插入队头，否则插入队尾。另外，Dijkstra和Prim也很相似，它们的区别主要是d的含义，前者是到s的临时最短距离，后者是到树的临时最短距离，相同点是，每次找d最小的更新其它点的距离。
+
+
